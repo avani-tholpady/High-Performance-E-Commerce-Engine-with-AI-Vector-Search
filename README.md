@@ -142,43 +142,6 @@ Response
 
 ---
 
-## 📅 Development Roadmap
-
-### ✅ Week 1
-- Project initialization
-- Express server setup
-- MongoDB connection
-- Backend folder structure
-- Environment configuration
-
-### ⏳ Week 2
-- Redis setup
-- Cache implementation
-- Cache invalidation
-
-### ⏳ Week 3
-- MongoDB Vector Search
-- Semantic product search
-- Aggregation queries
-
-### ⏳ Week 4
-- React Admin Dashboard
-- Product management
-- CI/CD Pipeline
-- Automated testing
-
----
-
-## 👥 Team
-
-| Name | Role |
-|------|------|
-| Avani | Backend Developer (Project Setup & Database) |
-| Urvi | Backend Developer (Product Management Module) |
-| Gnana | Frontend Developer (Product Catalog UI) |
-
----
-
 ## 🎯 Objective
 
 Build a production-ready, high-performance e-commerce engine capable of:
