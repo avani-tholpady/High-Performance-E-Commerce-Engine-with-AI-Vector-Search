@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ProductCard from "../components/ProductCard";
 import SearchBar from "../components/SearchBar";
+import Filter from "../components/Filter";
 
 const products = [
   {
@@ -28,12 +29,18 @@ const products = [
 
 function ProductList() {
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
 
   return (
     <div>
       <h1>Product Catalog</h1>
 
       <SearchBar search={search} setSearch={setSearch} />
+
+      <Filter
+        category={category}
+        setCategory={setCategory}
+      />
 
       <div
         style={{
@@ -56,7 +63,9 @@ function ProductList() {
 
       <div style={{ marginTop: "20px" }}>
         <button>Previous</button>
-        <button style={{ marginLeft: "10px" }}>Next</button>
+        <button style={{ marginRight: "10px" }}>1</button>
+        <button style={{ marginRight: "10px" }}>2</button>
+        <button>Next</button>
       </div>
     </div>
   );
