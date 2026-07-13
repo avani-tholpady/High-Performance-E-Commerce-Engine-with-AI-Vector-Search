@@ -2,6 +2,7 @@ import { useState } from "react";
 import ProductCard from "../components/ProductCard";
 import SearchBar from "../components/SearchBar";
 import Filter from "../components/Filter";
+import Sort from "../components/Sort";
 
 const products = [
   {
@@ -30,6 +31,7 @@ const products = [
 function ProductList() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [sort, setSort] = useState("");
 
   return (
     <div>
@@ -40,6 +42,11 @@ function ProductList() {
       <Filter
         category={category}
         setCategory={setCategory}
+      />
+
+      <Sort
+        sort={sort}
+        setSort={setSort}
       />
 
       <div
@@ -63,7 +70,7 @@ function ProductList() {
 
       <div style={{ marginTop: "20px" }}>
         <button>Previous</button>
-        <button style={{ marginRight: "10px" }}>1</button>
+        <button style={{ margin: "0 10px" }}>1</button>
         <button style={{ marginRight: "10px" }}>2</button>
         <button>Next</button>
       </div>
