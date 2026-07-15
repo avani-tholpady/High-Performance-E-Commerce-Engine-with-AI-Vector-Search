@@ -5,6 +5,7 @@ import Filter from "../components/Filter";
 import Sort from "../components/Sort";
 import Pagination from "../components/Pagination";
 import Loader from "../components/Loader";
+import "./ProductList.css";
 
 const products = [
   {
