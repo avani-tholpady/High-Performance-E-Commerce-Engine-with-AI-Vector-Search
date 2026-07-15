@@ -140,7 +140,6 @@ Response
 }
 ```
 
----
 
 ## 🎯 Objective
 

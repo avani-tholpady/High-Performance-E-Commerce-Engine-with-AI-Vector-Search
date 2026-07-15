@@ -2,7 +2,7 @@
 
 ## Overview
 
-The backend of the **High-Performance E-Commerce Engine with AI Vector Search** is built using **Node.js**, **Express.js**, and **MongoDB Atlas**. It provides the foundation for product management, API services, and future AI-powered semantic search. The project follows a modular architecture to ensure scalability, maintainability, and ease of development.
+This backend is built using **Node.js**, **Express.js**, and **MongoDB Atlas**. It provides the foundation for product management APIs, caching integration, and future AI-powered semantic product search. The project follows a modular architecture to ensure scalability, maintainability, and clean code organization.
 
 ---
 
@@ -31,7 +31,7 @@ The backend of the **High-Performance E-Commerce Engine with AI Vector Search** 
 - Centralized Global Error Handler middleware added
 - Request Logger middleware implemented
 - Reusable API Response utility added
-- Constants configuration implemented
+- Centralized constants configuration added
 - Backend documentation completed
 - Backend project structure organized
 
@@ -46,14 +46,18 @@ backend/
 │   │   └── db.js
 │   ├── constants/
 │   │   └── constants.js
+│   ├── controllers/
 │   ├── middleware/
 │   │   ├── errorHandler.js
 │   │   ├── logger.js
 │   │   └── notFound.js
+│   ├── models/
+│   ├── routes/
 │   ├── utils/
 │   │   └── apiResponse.js
 │   ├── app.js
 │   └── server.js
+├── docs/
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -111,7 +115,7 @@ npm run dev
 
 ---
 
-## API Endpoint
+## Available API
 
 ### Health Check
 
@@ -121,9 +125,9 @@ Example Response
 
 ```json
 {
-    "success": true,
-    "message": "Server is running successfully",
-    "data": null
+  "success": true,
+  "message": "Server is running successfully",
+  "data": null
 }
 ```
 
@@ -131,43 +135,42 @@ Example Response
 
 ## Middleware
 
-The backend currently includes the following middleware:
+The backend currently includes:
 
 - CORS Middleware
-- Express JSON Parser
+- Express JSON Middleware
 - Request Logger Middleware
 - Centralized 404 Not Found Middleware
-- Global Error Handler Middleware
+- Centralized Global Error Handler Middleware
 
 ---
 
 ## Request Logger
 
-The logger middleware records every incoming request to the backend.
+The request logger records every incoming API request for easier debugging.
 
 Example:
 
 ```text
 GET /api/health
-GET /products
-POST /products
+POST /api/products
+PUT /api/products/:id
+DELETE /api/products/:id
 ```
-
-This helps monitor API requests during development and debugging.
 
 ---
 
 ## API Response Utility
 
-A reusable API response utility is used to maintain consistent response formats throughout the application.
+The backend uses reusable response helper functions to maintain a consistent API response format.
 
 ### Success Response
 
 ```json
 {
-    "success": true,
-    "message": "Request completed successfully",
-    "data": {}
+  "success": true,
+  "message": "Request completed successfully",
+  "data": {}
 }
 ```
 
@@ -175,54 +178,46 @@ A reusable API response utility is used to maintain consistent response formats 
 
 ```json
 {
-    "success": false,
-    "message": "Something went wrong"
+  "success": false,
+  "message": "Something went wrong"
 }
 ```
 
 ---
 
-## Configuration
+## Features Completed
 
-The backend uses:
-
-- Centralized MongoDB configuration
-- Environment variable management using `dotenv`
-- Centralized constants configuration
-- Modular middleware architecture
-- Standardized API responses
-- Request logging for debugging
-
----
-
-## Current Features
-
-- Express.js backend server
-- MongoDB Atlas connectivity
+- Express.js server setup
+- MongoDB Atlas connection
 - Environment configuration
 - Health Check API
-- Centralized error handling
-- Request logging
+- Request Logger Middleware
+- Global Error Handler
+- 404 Not Found Middleware
 - Standardized API responses
-- Modular project structure
+- Centralized constants
+- Modular folder structure
 
 ---
 
-## Future Enhancements
+## Planned Features
 
 - Product Management Module
 - Product CRUD APIs
-- Product Search and Filtering
-- Redis Caching
+- Product Search
+- Product Filtering
+- Product Sorting
+- Product Pagination
+- Redis Cache Integration
 - MongoDB Vector Search
 - AI-powered Semantic Search
 - Authentication & Authorization
 - Order Management
-- Shopping Cart APIs
 
 ---
 
 ## Author
 
-**Backend Developer:** Avani  
+**Backend Developer:** Avani
+
 **Project:** High-Performance E-Commerce Engine with AI Vector Search
