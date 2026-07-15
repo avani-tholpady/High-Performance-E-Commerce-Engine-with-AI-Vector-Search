@@ -5,6 +5,7 @@ const logger = require("./middleware/logger");
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 const { successResponse } = require("./utils/apiResponse");
+const productRoutes = require("./routes/productRoutes");
 
 const app = express();
 
@@ -19,6 +20,8 @@ app.get("/api/health", (req, res) => {
     "Server is running successfully"
   );
 });
+
+app.use("/api/products", productRoutes);
 
 // Keep these after all routes
 app.use(notFound);
