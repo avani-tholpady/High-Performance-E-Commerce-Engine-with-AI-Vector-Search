@@ -6,12 +6,19 @@ const {
   getProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getCategories,
+  getBrands,
+  getPriceRange
 } = require("../controllers/productController");
 
 router.post("/", createProduct);
 
 router.get("/", getProducts);
+
+router.get("/meta/categories", getCategories);
+router.get("/meta/brands", getBrands);
+router.get("/meta/price-range", getPriceRange);
 
 router.get("/:id", getProductById);
 

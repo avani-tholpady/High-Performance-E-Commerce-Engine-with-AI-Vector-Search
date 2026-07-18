@@ -6,6 +6,7 @@ const {
   NotFoundError,
   InvalidIdError
 } = require("../utils/errors");
+const { successResponse } = require("../utils/apiResponse");
 
 /**
  * Validates request payload for creation or update.
@@ -460,10 +461,59 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
+const getCategories = async (req, res, next) => {
+  try {
+    const categories = await Product.aggregate([
+      { $match: { isActive: true } },
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+      { $project: { _id: 0, name: "$_id", count: 1 } },
+      { $sort: { name: 1 } }
+    ]);
+
+    return successResponse(res, 200, "Categories retrieved successfully", categories);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getBrands = async (req, res, next) => {
+  try {
+    const brands = await Product.aggregate([
+      { $match: { isActive: true } },
+      { $group: { _id: "$brand", count: { $sum: 1 } } },
+      { $project: { _id: 0, name: "$_id", count: 1 } },
+      { $sort: { name: 1 } }
+    ]);
+
+    return successResponse(res, 200, "Brands retrieved successfully", brands);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getPriceRange = async (req, res, next) => {
+  try {
+    const result = await Product.aggregate([
+      { $match: { isActive: true } },
+      { $group: { _id: null, minPrice: { $min: "$price" }, maxPrice: { $max: "$price" } } },
+      { $project: { _id: 0, minPrice: 1, maxPrice: 1 } }
+    ]);
+
+    const data = result.length > 0 ? result[0] : { minPrice: 0, maxPrice: 0 };
+
+    return successResponse(res, 200, "Price range retrieved successfully", data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProduct,
   getProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getCategories,
+  getBrands,
+  getPriceRange
 };
