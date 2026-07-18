@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
+const {
+  ValidationError,
+  DuplicateError,
+  NotFoundError,
+  InvalidIdError
+} = require("../utils/errors");
 
 /**
  * Validates request payload for creation or update.
@@ -201,38 +207,19 @@ const createProduct = async (req, res, next) => {
     // 1. Controller validation
     const validationErrors = validateProductPayload(req.body, false);
     if (validationErrors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "VALIDATION_FAILED",
-          message: "The product payload submitted contains validation errors.",
-          details: validationErrors
-        }
-      });
+      throw new ValidationError("The product payload submitted contains validation errors.", validationErrors);
     }
 
     // 2. Duplicate SKU Check
     const existingSku = await Product.findOne({ sku: req.body.sku.trim().toUpperCase() });
     if (existingSku) {
-      return res.status(409).json({
-        success: false,
-        error: {
-          code: "RESOURCE_ALREADY_EXISTS",
-          message: `A product with SKU '${req.body.sku}' already exists in the database.`
-        }
-      });
+      throw new DuplicateError(`A product with SKU '${req.body.sku}' already exists in the database.`);
     }
 
     // 3. Duplicate Slug Check
     const existingSlug = await Product.findOne({ slug: req.body.slug.trim().toLowerCase() });
     if (existingSlug) {
-      return res.status(409).json({
-        success: false,
-        error: {
-          code: "RESOURCE_ALREADY_EXISTS",
-          message: `A product with slug '${req.body.slug}' already exists in the database.`
-        }
-      });
+      throw new DuplicateError(`A product with slug '${req.body.slug}' already exists in the database.`);
     }
 
     // 4. Save product
@@ -350,25 +337,13 @@ const getProductById = async (req, res, next) => {
   try {
     // 1. Invalid ObjectId check
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "INVALID_ID_FORMAT",
-          message: "The product ID format provided is invalid."
-        }
-      });
+      throw new InvalidIdError();
     }
 
     // 2. Nonexistent / Soft-deleted check
     const product = await Product.findOne({ _id: req.params.id, isActive: true });
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "RESOURCE_NOT_FOUND",
-          message: `Product with ID '${req.params.id}' was not found or is currently inactive.`
-        }
-      });
+      throw new NotFoundError(`Product with ID '${req.params.id}' was not found or is currently inactive.`);
     }
 
     return res.status(200).json({
@@ -385,38 +360,19 @@ const updateProduct = async (req, res, next) => {
   try {
     // 1. Invalid ObjectId check
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "INVALID_ID_FORMAT",
-          message: "The product ID format provided is invalid."
-        }
-      });
+      throw new InvalidIdError();
     }
 
     // 2. Query target product
     const product = await Product.findOne({ _id: req.params.id, isActive: true });
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "RESOURCE_NOT_FOUND",
-          message: `Product with ID '${req.params.id}' was not found or is currently inactive.`
-        }
-      });
+      throw new NotFoundError(`Product with ID '${req.params.id}' was not found or is currently inactive.`);
     }
 
     // 3. Payload validation
     const validationErrors = validateProductPayload(req.body, true);
     if (validationErrors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "VALIDATION_FAILED",
-          message: "The product payload submitted contains validation errors.",
-          details: validationErrors
-        }
-      });
+      throw new ValidationError("The product payload submitted contains validation errors.", validationErrors);
     }
 
     // 4. compareAtPrice vs price comparison with database fallback
@@ -425,19 +381,12 @@ const updateProduct = async (req, res, next) => {
 
     if (finalComparePrice !== undefined && finalComparePrice !== null) {
       if (finalComparePrice <= finalPrice) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            code: "VALIDATION_FAILED",
-            message: "The product payload submitted contains validation errors.",
-            details: [
-              {
-                field: "compareAtPrice",
-                message: "Compare at price must be greater than the active selling price."
-              }
-            ]
+        throw new ValidationError("The product payload submitted contains validation errors.", [
+          {
+            field: "compareAtPrice",
+            message: "Compare at price must be greater than the active selling price."
           }
-        });
+        ]);
       }
     }
 
@@ -448,13 +397,7 @@ const updateProduct = async (req, res, next) => {
         _id: { $ne: req.params.id }
       });
       if (existingSku) {
-        return res.status(409).json({
-          success: false,
-          error: {
-            code: "RESOURCE_ALREADY_EXISTS",
-            message: `A product with SKU '${req.body.sku}' already exists in the database.`
-          }
-        });
+        throw new DuplicateError(`A product with SKU '${req.body.sku}' already exists in the database.`);
       }
     }
 
@@ -465,13 +408,7 @@ const updateProduct = async (req, res, next) => {
         _id: { $ne: req.params.id }
       });
       if (existingSlug) {
-        return res.status(409).json({
-          success: false,
-          error: {
-            code: "RESOURCE_ALREADY_EXISTS",
-            message: `A product with slug '${req.body.slug}' already exists in the database.`
-          }
-        });
+        throw new DuplicateError(`A product with slug '${req.body.slug}' already exists in the database.`);
       }
     }
 
@@ -499,25 +436,13 @@ const deleteProduct = async (req, res, next) => {
   try {
     // 1. Invalid ObjectId check
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "INVALID_ID_FORMAT",
-          message: "The product ID format provided is invalid."
-        }
-      });
+      throw new InvalidIdError();
     }
 
     // 2. Query target product
     const product = await Product.findOne({ _id: req.params.id, isActive: true });
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: "RESOURCE_NOT_FOUND",
-          message: `Product with ID '${req.params.id}' was not found or is currently inactive.`
-        }
-      });
+      throw new NotFoundError(`Product with ID '${req.params.id}' was not found or is currently inactive.`);
     }
 
     // 3. Perform Soft Delete

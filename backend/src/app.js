@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
+const helmet = require("helmet");
 const productRoutes = require("./routes/productRoutes");
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
@@ -12,6 +13,7 @@ const app = express();
 // =========================
 app.use(cors());
 app.use(express.json());
+app.use(helmet());
 app.use(express.urlencoded({ extended: true }));
 
 // =========================
