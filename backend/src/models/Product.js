@@ -139,7 +139,10 @@ const productSchema = new mongoose.Schema(
 );
 
 // Define full-text search capability
-productSchema.index({ name: "text", description: "text" });
+productSchema.index({ name: "text", description: "text", brand: "text" });
+
+// Define descending index for sorting by creation date
+productSchema.index({ createdAt: -1 });
 
 const Product = mongoose.model("Product", productSchema);
 
