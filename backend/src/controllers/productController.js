@@ -355,7 +355,41 @@ const getProductById = async (req, res, next) => {
     next(error);
   }
 };
+// GET /api/products/:id/related
+const getRelatedProducts = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      throw new InvalidIdError();
+    }
 
+    const product = await Product.findOne({
+      _id: req.params.id,
+      isActive: true
+    });
+
+    if (!product) {
+      throw new NotFoundError("Product not found.");
+    }
+
+    const related = await Product.find({
+      _id: { $ne: product._id },
+      isActive: true,
+      $or: [
+        { category: product.category },
+        { tags: { $in: product.tags || [] } }
+      ]
+    }).limit(8);
+
+    return successResponse(
+      res,
+      200,
+      "Related products retrieved successfully",
+      related
+    );
+  } catch (error) {
+    next(error);
+  }
+};
 // PUT /api/products/:id
 const updateProduct = async (req, res, next) => {
   try {
@@ -511,6 +545,7 @@ module.exports = {
   createProduct,
   getProducts,
   getProductById,
+  getRelatedProducts,
   updateProduct,
   deleteProduct,
   getCategories,
