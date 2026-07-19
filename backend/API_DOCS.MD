@@ -13,6 +13,9 @@
 | POST | `/products` | Create a new product |
 | PUT | `/products/:id` | Update an existing product |
 | DELETE | `/products/:id` | Soft delete a product |
+| GET | `/products/meta/categories` | Get distinct categories and active product counts |
+| GET | `/products/meta/brands` | Get distinct brands and active product counts |
+| GET | `/products/meta/price-range` | Get price range for active products |
 
 ---
 
@@ -290,6 +293,93 @@ DELETE /api/products/6a591d35125209c00b5aef88
 |--------|------|------|
 | 400 | INVALID_ID_FORMAT | Invalid MongoDB ObjectId |
 | 404 | RESOURCE_NOT_FOUND | Product not found or already inactive |
+
+---
+
+## GET /api/products/meta/categories
+
+Returns distinct categories along with active product counts for each category, sorted alphabetically.
+
+### Example Request
+
+```
+GET /api/products/meta/categories
+```
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "message": "Categories retrieved successfully",
+  "data": [
+    {
+      "name": "accessories/watches",
+      "count": 42
+    },
+    {
+      "name": "electronics/computers",
+      "count": 128
+    }
+  ]
+}
+```
+
+---
+
+## GET /api/products/meta/brands
+
+Returns distinct brands along with active product counts for each brand, sorted alphabetically.
+
+### Example Request
+
+```
+GET /api/products/meta/brands
+```
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "message": "Brands retrieved successfully",
+  "data": [
+    {
+      "name": "Apple",
+      "count": 56
+    },
+    {
+      "name": "Samsung",
+      "count": 78
+    }
+  ]
+}
+```
+
+---
+
+## GET /api/products/meta/price-range
+
+Returns the minimum and maximum price across all active products.
+
+### Example Request
+
+```
+GET /api/products/meta/price-range
+```
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "message": "Price range retrieved successfully",
+  "data": {
+    "minPrice": 5.99,
+    "maxPrice": 1299.99
+  }
+}
+```
 
 ---
 
