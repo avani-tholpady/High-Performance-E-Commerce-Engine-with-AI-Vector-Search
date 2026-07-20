@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
+const embedText = require("../utils/embedding");
 const {
   ValidationError,
   DuplicateError,
@@ -466,6 +467,45 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
+
+const aiSearch = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: "Query is required",
+      });
+    }
+
+    const queryEmbedding = await embedText(query);
+
+    const products = await Product.aggregate([
+      {
+        $vectorSearch: {
+          index: "product_vector_index",
+          path: "embedding",
+          queryVector: queryEmbedding,
+          numCandidates: 100,
+          limit: 10,
+        },
+      },
+    ]);
+
+    res.json({
+      success: true,
+      results: products,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 // DELETE /api/products/:id
 const deleteProduct = async (req, res, next) => {
   try {
@@ -550,5 +590,6 @@ module.exports = {
   deleteProduct,
   getCategories,
   getBrands,
-  getPriceRange
+  getPriceRange,
+  aiSearch,
 };
