@@ -3,6 +3,7 @@ const cors = require("cors");
 
 const helmet = require("helmet");
 const productRoutes = require("./routes/productRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -30,6 +31,7 @@ app.get("/api/health", (req, res) => {
 // API Routes
 // =========================
 app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
 
 // =========================
 // 404 Middleware

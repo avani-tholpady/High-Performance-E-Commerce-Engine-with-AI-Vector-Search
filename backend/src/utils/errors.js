@@ -33,10 +33,17 @@ class InvalidIdError extends AppError {
   }
 }
 
+class UnauthorizedError extends AppError {
+  constructor(message = "Authentication token is missing or invalid.") {
+    super(message, 401, "UNAUTHORIZED");
+  }
+}
+
 module.exports = {
   AppError,
   NotFoundError,
   ValidationError,
   DuplicateError,
-  InvalidIdError
+  InvalidIdError,
+  UnauthorizedError
 };
