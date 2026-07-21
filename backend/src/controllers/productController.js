@@ -580,7 +580,39 @@ const getPriceRange = async (req, res, next) => {
     next(error);
   }
 };
+// GET /api/products/featured
+const getFeaturedProducts = async (req, res, next) => {
+  try {
+    const featured = await Product.find({
+      isActive: true,
+      tags: "featured",
+    }).limit(5);
 
+    return res.status(200).json({
+      success: true,
+      data: featured,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/products/on-sale
+const getOnSaleProducts = async (req, res, next) => {
+  try {
+    const onSale = await Product.find({
+      isActive: true,
+      compareAtPrice: { $gt: 0 },
+    }).limit(5);
+
+    return res.status(200).json({
+      success: true,
+      data: onSale,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   createProduct,
   getProducts,
@@ -592,4 +624,6 @@ module.exports = {
   getBrands,
   getPriceRange,
   aiSearch,
+  getFeaturedProducts,
+  getOnSaleProducts,
 };
