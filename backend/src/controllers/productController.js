@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
+const embedText = require("../utils/embedding");
 const {
   ValidationError,
   DuplicateError,
@@ -466,6 +467,45 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
+
+const aiSearch = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: "Query is required",
+      });
+    }
+
+    const queryEmbedding = await embedText(query);
+
+    const products = await Product.aggregate([
+      {
+        $vectorSearch: {
+          index: "product_vector_index",
+          path: "embedding",
+          queryVector: queryEmbedding,
+          numCandidates: 100,
+          limit: 10,
+        },
+      },
+    ]);
+
+    res.json({
+      success: true,
+      results: products,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 // DELETE /api/products/:id
 const deleteProduct = async (req, res, next) => {
   try {
@@ -540,7 +580,39 @@ const getPriceRange = async (req, res, next) => {
     next(error);
   }
 };
+// GET /api/products/featured
+const getFeaturedProducts = async (req, res, next) => {
+  try {
+    const featured = await Product.find({
+      isActive: true,
+      tags: "featured",
+    }).limit(5);
 
+    return res.status(200).json({
+      success: true,
+      data: featured,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/products/on-sale
+const getOnSaleProducts = async (req, res, next) => {
+  try {
+    const onSale = await Product.find({
+      isActive: true,
+      compareAtPrice: { $gt: 0 },
+    }).limit(5);
+
+    return res.status(200).json({
+      success: true,
+      data: onSale,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   createProduct,
   getProducts,
@@ -550,5 +622,8 @@ module.exports = {
   deleteProduct,
   getCategories,
   getBrands,
-  getPriceRange
+  getPriceRange,
+  aiSearch,
+  getFeaturedProducts,
+  getOnSaleProducts,
 };
