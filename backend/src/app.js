@@ -1,7 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 
-const helmet = require("helmet");
+const {
+  helmetMiddleware,
+  sanitizeMongo,
+  preventXss,
+  rateLimiter,
+} = require("./middleware/security");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const notFound = require("./middleware/notFound");
@@ -14,8 +19,17 @@ const app = express();
 // =========================
 app.use(cors());
 app.use(express.json());
-app.use(helmet());
 app.use(express.urlencoded({ extended: true }));
+
+// Security Middleware
+app.use(helmetMiddleware);
+
+// Disabled temporarily because express-mongo-sanitize
+// is not yet compatible with Express 5
+// app.use(sanitizeMongo);
+
+//app.use(preventXss);
+app.use("/api", rateLimiter);
 
 // =========================
 // Health Check Route
