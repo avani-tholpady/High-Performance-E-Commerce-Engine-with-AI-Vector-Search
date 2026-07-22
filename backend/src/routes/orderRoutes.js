@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const { protect } = require("../middleware/auth");
 
 const {
   createOrder,
-  getOrders,
-  getOrderById
+  getOrders
 } = require("../controllers/orderController");
 
-router.post("/", createOrder);
-router.get("/", getOrders);
-router.get("/:id", getOrderById);
+// Protect all order endpoints
+router.post("/", protect, createOrder);
+router.get("/", protect, getOrders);
 
 module.exports = router;
