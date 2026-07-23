@@ -13,15 +13,13 @@
 | POST | `/products` | Create a new product |
 | PUT | `/products/:id` | Update an existing product |
 | DELETE | `/products/:id` | Soft delete a product |
-<<<<<<< Updated upstream
 | GET | `/products/meta/categories` | Get distinct categories and active product counts |
 | GET | `/products/meta/brands` | Get distinct brands and active product counts |
 | GET | `/products/meta/price-range` | Get price range for active products |
-=======
-| POST | `/orders` | Create a new checkout order |
-| GET | `/orders` | Retrieve all orders |
-| GET | `/orders/:id` | Retrieve single order by ID |
->>>>>>> Stashed changes
+| POST | `/orders` | Create a new checkout order (Protected) |
+| GET | `/orders` | Retrieve authenticated user's orders (Protected) |
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Login user and retrieve JWT token |
 
 ---
 
@@ -470,24 +468,29 @@ All `GET /api/products` responses include a `meta` object:
 
 ---
 
-# 🛒 Order API Documentation
+# 🛒 Order API Documentation (Authenticated)
+
+**Note**: All Order endpoints require authentication. Pass the Authorization header:
+`Authorization: Bearer <token>`
 
 ## POST /api/orders
 
-Creates a new checkout order.
+Creates a new checkout order for the authenticated user. User ID is extracted automatically from the authentication token.
+
+### Headers
+* `Authorization: Bearer <token>` (Required)
+* `Content-Type: application/json`
 
 ### Request Body
 
 ```json
 {
-  "user": "64b0f9f3c1b0c03d1c9ef001",
   "items": [
     {
       "product": "64b0f9f3c1b0c03d1c9ef002",
       "quantity": 2
     }
   ],
-  "totalAmount": 796.00,
   "status": "Pending"
 }
 ```
@@ -513,8 +516,8 @@ Creates a new checkout order.
     ],
     "totalAmount": 796.00,
     "status": "Pending",
-    "createdAt": "2026-07-20T14:30:00.000Z",
-    "updatedAt": "2026-07-20T14:30:00.000Z"
+    "createdAt": "2026-07-21T15:30:00.000Z",
+    "updatedAt": "2026-07-21T15:30:00.000Z"
   }
 }
 ```
@@ -523,6 +526,7 @@ Creates a new checkout order.
 
 | Status | Code | When |
 |--------|------|------|
+| 401 | UNAUTHORIZED | Authentication header missing or invalid |
 | 400 | VALIDATION_FAILED | Invalid order payload or missing fields |
 | 404 | RESOURCE_NOT_FOUND | One or more items refer to non-existent/inactive product |
 
@@ -530,7 +534,10 @@ Creates a new checkout order.
 
 ## GET /api/orders
 
-Returns a list of all orders.
+Returns a list of all orders belonging strictly to the authenticated user, sorted newest first.
+
+### Headers
+* `Authorization: Bearer <token>` (Required)
 
 ### Success Response (200)
 
@@ -554,42 +561,51 @@ Returns a list of all orders.
       ],
       "totalAmount": 796.00,
       "status": "Pending",
-      "createdAt": "2026-07-20T14:30:00.000Z",
-      "updatedAt": "2026-07-20T14:30:00.000Z"
+      "createdAt": "2026-07-21T15:30:00.000Z",
+      "updatedAt": "2026-07-21T15:30:00.000Z"
     }
   ]
 }
 ```
 
+### Error Responses
+
+| Status | Code | When |
+|--------|------|------|
+| 401 | UNAUTHORIZED | Authentication header missing or invalid |
+
 ---
 
-## GET /api/orders/:id
+# 🔐 Authentication API Documentation
 
-Returns details for a single order by ID.
+## POST /api/auth/register
 
-### Success Response (200)
+Registers a new user and generates a JWT token.
 
+### Headers
+* `Content-Type: application/json`
+
+### Request Body
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "password": "securepassword123"
+}
+```
+
+### Success Response (201)
 ```json
 {
   "success": true,
-  "message": "Order retrieved successfully",
+  "message": "User registered successfully",
   "data": {
-    "_id": "669999999999999999999999",
-    "user": "64b0f9f3c1b0c03d1c9ef001",
-    "items": [
-      {
-        "product": {
-          "_id": "64b0f9f3c1b0c03d1c9ef002",
-          "name": "Sony WH-1000XM5 Wireless Headphones",
-          "price": 398.00
-        },
-        "quantity": 2
-      }
-    ],
-    "totalAmount": 796.00,
-    "status": "Pending",
-    "createdAt": "2026-07-20T14:30:00.000Z",
-    "updatedAt": "2026-07-20T14:30:00.000Z"
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "64b0f9f3c1b0c03d1c9ef005",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com"
+    }
   }
 }
 ```
@@ -598,8 +614,51 @@ Returns details for a single order by ID.
 
 | Status | Code | When |
 |--------|------|------|
-| 400 | INVALID_ID_FORMAT | Invalid MongoDB ObjectId format |
-| 404 | RESOURCE_NOT_FOUND | Order ID not found |
+| 400 | VALIDATION_FAILED | Invalid email, name too short, password too short |
+| 409 | RESOURCE_ALREADY_EXISTS | Email already registered |
+
+---
+
+## POST /api/auth/login
+
+Logs in an existing user and returns a JWT token.
+
+### Headers
+* `Content-Type: application/json`
+
+### Request Body
+```json
+{
+  "email": "jane.doe@example.com",
+  "password": "securepassword123"
+}
+```
+
+### Success Response (200)
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "64b0f9f3c1b0c03d1c9ef005",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com"
+    }
+  }
+}
+```
+
+### Error Responses
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | VALIDATION_FAILED | Missing email or password |
+| 401 | UNAUTHORIZED | Invalid email or password |
+
+---
+
 
 ---
 

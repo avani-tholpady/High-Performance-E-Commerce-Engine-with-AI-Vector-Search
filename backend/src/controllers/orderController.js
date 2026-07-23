@@ -4,7 +4,8 @@ const Product = require("../models/Product");
 const {
   ValidationError,
   NotFoundError,
-  InvalidIdError
+  InvalidIdError,
+  UnauthorizedError
 } = require("../utils/errors");
 const { successResponse } = require("../utils/apiResponse");
 
@@ -40,16 +41,6 @@ const validateOrderPayload = (body) => {
     });
   }
 
-  // Validate user if provided
-  if (body.user !== undefined && body.user !== null) {
-    if (typeof body.user !== "string" || !mongoose.Types.ObjectId.isValid(body.user)) {
-      details.push({
-        field: "user",
-        message: "User reference must be a valid ObjectId."
-      });
-    }
-  }
-
   // Validate totalAmount if provided
   if (body.totalAmount !== undefined && body.totalAmount !== null) {
     const total = Number(body.totalAmount);
@@ -75,16 +66,21 @@ const validateOrderPayload = (body) => {
   return details;
 };
 
-// POST /api/orders
+// POST /api/orders (Protected)
 const createOrder = async (req, res, next) => {
   try {
-    // 1. Validate payload
+    // 1. Verify user is authenticated
+    if (!req.user || !req.user._id) {
+      throw new UnauthorizedError("User is not authenticated.");
+    }
+
+    // 2. Validate payload
     const validationErrors = validateOrderPayload(req.body);
     if (validationErrors.length > 0) {
       throw new ValidationError("The order payload submitted contains validation errors.", validationErrors);
     }
 
-    // 2. Extract product IDs and query DB
+    // 3. Extract product IDs and query DB
     const productIds = req.body.items.map((item) => item.product);
     const existingProducts = await Product.find({
       _id: { $in: productIds },
@@ -103,7 +99,7 @@ const createOrder = async (req, res, next) => {
       }
     }
 
-    // 3. Calculate total amount if not explicitly supplied
+    // 4. Calculate total amount if not explicitly supplied
     let calculatedTotal = 0;
     req.body.items.forEach((item) => {
       const prod = productMap[item.product];
@@ -113,16 +109,13 @@ const createOrder = async (req, res, next) => {
 
     const finalTotalAmount = req.body.totalAmount !== undefined ? Number(req.body.totalAmount) : calculatedTotal;
 
-    // 4. Create Order document
+    // 5. Create Order document strictly associating authenticated user ID (ignores req.body.user)
     const orderData = {
+      user: req.user._id,
       items: req.body.items,
       totalAmount: finalTotalAmount,
       status: req.body.status || "Pending"
     };
-
-    if (req.body.user) {
-      orderData.user = req.body.user;
-    }
 
     const order = new Order(orderData);
     await order.save();
@@ -134,10 +127,14 @@ const createOrder = async (req, res, next) => {
   }
 };
 
-// GET /api/orders
+// GET /api/orders (Protected - returns ONLY orders of logged in user)
 const getOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find()
+    if (!req.user || !req.user._id) {
+      throw new UnauthorizedError("User is not authenticated.");
+    }
+
+    const orders = await Order.find({ user: req.user._id })
       .populate("items.product")
       .sort({ createdAt: -1 });
 
@@ -147,28 +144,7 @@ const getOrders = async (req, res, next) => {
   }
 };
 
-// GET /api/orders/:id
-const getOrderById = async (req, res, next) => {
-  try {
-    // 1. Invalid ObjectId check
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      throw new InvalidIdError("The order ID format provided is invalid.");
-    }
-
-    // 2. Query target order
-    const order = await Order.findById(req.params.id).populate("items.product");
-    if (!order) {
-      throw new NotFoundError(`Order with ID '${req.params.id}' was not found.`);
-    }
-
-    return successResponse(res, 200, "Order retrieved successfully", order);
-  } catch (error) {
-    next(error);
-  }
-};
-
 module.exports = {
   createOrder,
-  getOrders,
-  getOrderById
+  getOrders
 };
