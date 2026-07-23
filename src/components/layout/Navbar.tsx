@@ -1,16 +1,35 @@
+import {
+  FaSearch,
+  FaShoppingCart,
+  FaUserCircle,
+  FaHeart,
+} from "react-icons/fa";
+
 const Navbar = () => {
   return (
-    <nav className="flex items-center justify-between px-8 py-4 shadow-md bg-white">
-      <h1 className="text-2xl font-bold text-blue-600">
-        ShopSmart
-      </h1>
+    <header className="bg-white shadow sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-5 py-4 flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-blue-600">
+          ShopVerse
+        </h1>
 
-      <ul className="flex gap-6 text-gray-700 font-medium">
-        <li className="cursor-pointer hover:text-blue-600">Home</li>
-        <li className="cursor-pointer hover:text-blue-600">Products</li>
-        <li className="cursor-pointer hover:text-blue-600">Categories</li>
-      </ul>
-    </nav>
+        <div className="hidden md:flex bg-gray-100 rounded-lg px-3 py-2 w-[450px]">
+          <FaSearch className="text-gray-500 mt-1" />
+
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="bg-transparent outline-none ml-3 w-full"
+          />
+        </div>
+
+        <div className="flex gap-6 text-2xl">
+          <FaHeart className="cursor-pointer hover:text-red-500" />
+          <FaShoppingCart className="cursor-pointer hover:text-blue-600" />
+          <FaUserCircle className="cursor-pointer hover:text-blue-600" />
+        </div>
+      </div>
+    </header>
   );
 };
 
