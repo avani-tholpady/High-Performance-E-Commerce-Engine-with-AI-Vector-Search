@@ -12,7 +12,8 @@ const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
-
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
 const app = express();
 
 // =========================
@@ -47,8 +48,15 @@ app.get("/api/health", (req, res) => {
 // =========================
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
+<<<<<<< HEAD
+app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+=======
 app.use("/api/auth", authRoutes);
+>>>>>>> origin/main
 
+// Swagger API Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // =========================
 // 404 Middleware
 // =========================

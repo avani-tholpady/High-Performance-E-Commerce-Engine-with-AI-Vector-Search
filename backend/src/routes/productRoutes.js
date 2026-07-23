@@ -17,7 +17,33 @@ const {
 } = require("../controllers/productController");
 
 router.post("/", createProduct);
-
+/**
+ * @swagger
+ * /products:
+ *   get:
+ *     summary: Get all products
+ *     tags:
+ *       - Products
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search keyword
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved products
+ */
 router.get("/", getProducts);
 
 router.get("/meta/categories", getCategories);
