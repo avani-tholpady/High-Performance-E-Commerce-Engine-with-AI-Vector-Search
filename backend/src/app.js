@@ -9,6 +9,7 @@ const {
 } = require("./middleware/security");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const authRoutes = require("./routes/authRoutes");
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -46,6 +47,7 @@ app.get("/api/health", (req, res) => {
 // =========================
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/auth", authRoutes);
 
 // =========================
 // 404 Middleware

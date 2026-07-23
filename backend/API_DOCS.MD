@@ -18,6 +18,8 @@
 | GET | `/products/meta/price-range` | Get price range for active products |
 | POST | `/orders` | Create a new checkout order (Protected) |
 | GET | `/orders` | Retrieve authenticated user's orders (Protected) |
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Login user and retrieve JWT token |
 
 ---
 
@@ -571,6 +573,89 @@ Returns a list of all orders belonging strictly to the authenticated user, sorte
 | Status | Code | When |
 |--------|------|------|
 | 401 | UNAUTHORIZED | Authentication header missing or invalid |
+
+---
+
+# 🔐 Authentication API Documentation
+
+## POST /api/auth/register
+
+Registers a new user and generates a JWT token.
+
+### Headers
+* `Content-Type: application/json`
+
+### Request Body
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "password": "securepassword123"
+}
+```
+
+### Success Response (201)
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "64b0f9f3c1b0c03d1c9ef005",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com"
+    }
+  }
+}
+```
+
+### Error Responses
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | VALIDATION_FAILED | Invalid email, name too short, password too short |
+| 409 | RESOURCE_ALREADY_EXISTS | Email already registered |
+
+---
+
+## POST /api/auth/login
+
+Logs in an existing user and returns a JWT token.
+
+### Headers
+* `Content-Type: application/json`
+
+### Request Body
+```json
+{
+  "email": "jane.doe@example.com",
+  "password": "securepassword123"
+}
+```
+
+### Success Response (200)
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "64b0f9f3c1b0c03d1c9ef005",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com"
+    }
+  }
+}
+```
+
+### Error Responses
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | VALIDATION_FAILED | Missing email or password |
+| 401 | UNAUTHORIZED | Invalid email or password |
 
 ---
 
