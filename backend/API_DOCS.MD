@@ -16,6 +16,7 @@
 | GET | `/products/meta/categories` | Get distinct categories and active product counts |
 | GET | `/products/meta/brands` | Get distinct brands and active product counts |
 | GET | `/products/meta/price-range` | Get price range for active products |
+| GET | `/products/ai-search` | AI-powered vector search for products |
 | POST | `/orders` | Create a new checkout order (Protected) |
 | GET | `/orders` | Retrieve authenticated user's orders (Protected) |
 | POST | `/auth/register` | Register a new user |
@@ -384,6 +385,50 @@ GET /api/products/meta/price-range
   }
 }
 ```
+
+---
+
+## GET /api/products/ai-search
+
+Performs an AI-powered vector search across active products.
+
+### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | The natural language search term or phrase |
+
+### Example Request
+
+```
+GET /api/products/ai-search?query=wireless bluetooth noise cancelling headphones
+```
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "_id": "64b0f9f3c1b0c03d1c9ef002",
+      "name": "Sony WH-1000XM5 Wireless Headphones",
+      "brand": "Sony",
+      "category": "Electronics",
+      "description": "Industry leading noise canceling wireless over-ear headphones with Alexa voice control.",
+      "price": 398.00,
+      "embedding": [0.015, -0.034, 0.089, ...],
+      "isActive": true
+    }
+  ]
+}
+```
+
+### Error Responses
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | BAD_REQUEST | Search query parameter is missing |
 
 ---
 
