@@ -203,6 +203,23 @@ const validateProductPayload = (body, isUpdate = false) => {
   return details;
 };
 
+/**
+ * Automatically generates embedding for the product if HF_TOKEN is present
+ * and one of the text fields changed.
+ * @param {Object} product Product model document
+ */
+const updateProductEmbedding = async (product) => {
+  if (process.env.HF_TOKEN) {
+    try {
+      const textToEmbed = `Name: ${product.name}. Brand: ${product.brand}. Category: ${product.category}. Description: ${product.description}.`;
+      const embedding = await embedText(textToEmbed);
+      product.embedding = embedding;
+    } catch (err) {
+      console.error(`Failed to generate product embedding for ${product._id}:`, err.message);
+    }
+  }
+};
+
 // POST /api/products
 const createProduct = async (req, res, next) => {
   try {
@@ -226,6 +243,7 @@ const createProduct = async (req, res, next) => {
 
     // 4. Save product
     const product = new Product(req.body);
+    await updateProductEmbedding(product);
     await product.save();
 
     return res.status(201).json({
@@ -449,12 +467,24 @@ const updateProduct = async (req, res, next) => {
     }
 
     // 7. Update and Save
+    let hasEmbeddingFieldsChanged = false;
+    const embeddingFields = ["name", "brand", "category", "description"];
+    embeddingFields.forEach(field => {
+      if (req.body[field] !== undefined && req.body[field] !== product[field]) {
+        hasEmbeddingFieldsChanged = true;
+      }
+    });
+
     const updatableFields = ["name", "slug", "sku", "description", "price", "compareAtPrice", "category", "brand", "images", "stock", "tags", "ratings", "embedding"];
     updatableFields.forEach(field => {
       if (req.body[field] !== undefined) {
         product[field] = req.body[field];
       }
     });
+
+    if (hasEmbeddingFieldsChanged) {
+      await updateProductEmbedding(product);
+    }
 
     await product.save();
 
