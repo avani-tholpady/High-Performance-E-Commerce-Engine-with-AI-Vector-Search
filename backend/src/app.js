@@ -48,12 +48,12 @@ app.get("/api/health", (req, res) => {
 // =========================
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
-<<<<<<< HEAD
+
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
-=======
+
 app.use("/api/auth", authRoutes);
->>>>>>> origin/main
+
 
 // Swagger API Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

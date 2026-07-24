@@ -643,6 +643,36 @@ const getOnSaleProducts = async (req, res, next) => {
     next(error);
   }
 };
+// GET /api/products/stats
+const getProductStats = async (req, res, next) => {
+  try {
+    const stats = await Product.aggregate([
+      { $match: { isActive: true } },
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+          averagePrice: { $avg: "$price" },
+          cheapestPrice: { $min: "$price" },
+          mostExpensive: { $max: "$price" },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data:
+        stats[0] || {
+          totalProducts: 0,
+          averagePrice: 0,
+          cheapestPrice: 0,
+          mostExpensive: 0,
+        },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   createProduct,
   getProducts,
@@ -656,4 +686,5 @@ module.exports = {
   aiSearch,
   getFeaturedProducts,
   getOnSaleProducts,
+  getProductStats,
 };

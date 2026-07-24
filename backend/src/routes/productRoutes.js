@@ -14,6 +14,7 @@ const {
   aiSearch,
   getFeaturedProducts,
   getOnSaleProducts,
+  getProductStats,
 } = require("../controllers/productController");
 
 router.post("/", createProduct);
@@ -54,6 +55,7 @@ router.get("/meta/price-range", getPriceRange);
 router.get("/ai-search", aiSearch);
 router.get("/featured", getFeaturedProducts);
 router.get("/on-sale", getOnSaleProducts);
+router.get("/stats", getProductStats);
 router.get("/:id", getProductById);
 router.get("/:id/related", getRelatedProducts);
 
