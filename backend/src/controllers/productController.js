@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const embedText = require("../utils/embedding");
+const { getCache, setCache, deleteCache } = require("../config/redis");
 const {
   ValidationError,
   DuplicateError,
@@ -246,6 +247,9 @@ const createProduct = async (req, res, next) => {
     await updateProductEmbedding(product);
     await product.save();
 
+    // Invalidate list caches
+    await deleteCache("products:list:*");
+
     return res.status(201).json({
       success: true,
       data: product
@@ -258,6 +262,19 @@ const createProduct = async (req, res, next) => {
 // GET /api/products
 const getProducts = async (req, res, next) => {
   try {
+    // Generate sorted cache key based on query parameters
+    const queryString = Object.keys(req.query)
+      .sort()
+      .map(key => `${key}=${req.query[key]}`)
+      .join("&");
+    const cacheKey = `products:list:${queryString || "all"}`;
+
+    // Try to retrieve from cache
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.status(200).json(cachedData);
+    }
+
     const filter = { isActive: true };
     const { page, limit, search, category, minPrice, maxPrice, sort } = req.query;
 
@@ -333,7 +350,7 @@ const getProducts = async (req, res, next) => {
     const nextPage = hasNextPage ? pageNum + 1 : null;
     const prevPage = hasPrevPage ? pageNum - 1 : null;
 
-    return res.status(200).json({
+    const responsePayload = {
       success: true,
       data: products,
       meta: {
@@ -346,7 +363,12 @@ const getProducts = async (req, res, next) => {
         nextPage,
         prevPage
       }
-    });
+    };
+
+    // Store in cache
+    await setCache(cacheKey, responsePayload);
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     next(error);
   }
@@ -360,16 +382,29 @@ const getProductById = async (req, res, next) => {
       throw new InvalidIdError();
     }
 
+    const cacheKey = `products:id:${req.params.id}`;
+
+    // Try to retrieve from cache
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.status(200).json(cachedData);
+    }
+
     // 2. Nonexistent / Soft-deleted check
     const product = await Product.findOne({ _id: req.params.id, isActive: true });
     if (!product) {
       throw new NotFoundError(`Product with ID '${req.params.id}' was not found or is currently inactive.`);
     }
 
-    return res.status(200).json({
+    const responsePayload = {
       success: true,
       data: product
-    });
+    };
+
+    // Store in cache
+    await setCache(cacheKey, responsePayload);
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     next(error);
   }
@@ -488,6 +523,10 @@ const updateProduct = async (req, res, next) => {
 
     await product.save();
 
+    // Invalidate caches
+    await deleteCache(`products:id:${product._id}`);
+    await deleteCache("products:list:*");
+
     return res.status(200).json({
       success: true,
       data: product
@@ -553,6 +592,10 @@ const deleteProduct = async (req, res, next) => {
     // 3. Perform Soft Delete
     product.isActive = false;
     await product.save();
+
+    // Invalidate caches
+    await deleteCache(`products:id:${product._id}`);
+    await deleteCache("products:list:*");
 
     return res.status(200).json({
       success: true,

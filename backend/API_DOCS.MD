@@ -707,3 +707,22 @@ Logs in an existing user and returns a JWT token.
 
 ---
 
+# ⚡ Redis Caching Configuration
+
+To optimize performance, Product List (`GET /api/products`) and Product Details (`GET /api/products/:id`) APIs are cached using a Redis layer.
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `REDIS_URL` | Redis Connection URI | `redis://127.0.0.1:6379` |
+| `CACHE_TTL` | Cache TTL expiration (in seconds) | `3600` (1 hour) |
+
+## Cache Invalidation Strategy
+
+* **List Caches**: Stored with keys matching `products:list:<query_parameters_hash>`. Any creation, update, or deletion operation automatically invalidates all list caches via wildcard eviction.
+* **Detail Caches**: Stored with keys matching `products:id:<product_id>`. Any update or deletion operation automatically invalidates the specific product cache.
+
+## Resiliency
+
+If Redis goes offline, connection errors are handled gracefully without crashing the server. The application automatically bypasses the cache and queries MongoDB directly until the Redis connection is re-established.
