@@ -23,6 +23,30 @@
 | POST | `/auth/login` | Login user and retrieve JWT token |
 
 ---
+## GET /api/products/:id/recommend
+
+### Description
+Returns AI-powered product recommendations based on vector similarity using MongoDB Atlas Vector Search.
+
+### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| id | String | Product ID |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "...",
+      "name": "...",
+      "price": 299.99
+    }
+  ]
+}
 
 ## GET /api/products
 
