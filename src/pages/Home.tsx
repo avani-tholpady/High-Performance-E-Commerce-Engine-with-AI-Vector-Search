@@ -6,13 +6,13 @@ import Footer from "../components/layout/Footer";
 
 const Home = () => {
   return (
-    <>
+    <div className="bg-slate-50 min-h-screen">
       <Navbar />
       <HeroBanner />
       <CategorySection />
       <FeaturedProducts />
       <Footer />
-    </>
+    </div>
   );
 };
 
