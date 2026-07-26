@@ -1,35 +1,42 @@
+import ProductCard from "../product/ProductCard";
+import { products } from "../../data/products";
+
 const FeaturedProducts = () => {
   return (
-    <section className="max-w-7xl mx-auto py-12 px-5">
+    <section className="py-20 bg-white">
 
-      <h2 className="text-3xl font-bold mb-8">
-        Featured Products
-      </h2>
+      <div className="max-w-7xl mx-auto px-6">
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="flex justify-between items-center mb-10">
 
-        {[1,2,3,4].map((item)=>(
-          <div
-            key={item}
-            className="bg-white rounded-lg shadow p-4"
-          >
+          <div>
 
-            <div className="h-48 bg-gray-200 rounded"></div>
+            <h2 className="text-4xl font-bold">
+              Featured Products
+            </h2>
 
-            <h3 className="font-semibold mt-4">
-              Product {item}
-            </h3>
-
-            <p className="text-blue-600 font-bold mt-2">
-              ₹999
+            <p className="text-gray-500 mt-2">
+              Best selling products this week
             </p>
 
-            <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded">
-              View
-            </button>
-
           </div>
-        ))}
+
+          <button className="text-blue-600 font-semibold">
+            View All →
+          </button>
+
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              {...product}
+            />
+          ))}
+
+        </div>
 
       </div>
 
