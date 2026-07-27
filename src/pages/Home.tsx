@@ -1,21 +1,43 @@
 import Navbar from "../components/layout/Navbar";
-import HeroBanner from "../components/home/HeroBanner";
-import CategorySection from "../components/home/CategorySection";
-import FeaturedProducts from "../components/home/FeaturedProducts";
-import DealsOfTheDay from "../components/home/DealsOfTheDay";
-import Footer from "../components/layout/Footer";
+import Hero from "../components/home/HeroBanner";
+import Categories from "../components/home/CategorySection";
+import ProductGrid from "../components/product/ProductGrid";
 
-const Home = () => {
-  return (
-    <>
-      <Navbar />
-      <HeroBanner />
-      <CategorySection />
-      <FeaturedProducts />
-      <DealsOfTheDay />
-      <Footer />
-    </>
-  );
-};
+
+const Home=()=>{
+
+
+return(
+
+<div className="px-8">
+
+<Navbar/>
+
+
+<Hero/>
+
+
+<Categories/>
+
+
+<section className="mt-12">
+
+<h2 className="text-3xl font-bold mb-6">
+Featured Products
+</h2>
+
+
+<ProductGrid/>
+
+
+</section>
+
+
+</div>
+
+)
+
+}
+
 
 export default Home;

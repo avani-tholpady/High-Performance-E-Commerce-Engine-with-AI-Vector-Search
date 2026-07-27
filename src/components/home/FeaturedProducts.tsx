@@ -1,45 +1,37 @@
-import ProductCard from "../product/ProductCard";
+import { Link } from "react-router-dom";
 import { products } from "../../data/products";
+import ProductCard from "../ProductCard";
 
 const FeaturedProducts = () => {
-  return (
-    <section className="py-20 bg-white">
+  const featured = products.slice(0, 4);
 
+  return (
+    <section className="py-16 bg-gray-100">
       <div className="max-w-7xl mx-auto px-6">
 
-        <div className="flex justify-between items-center mb-10">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold">
+            Featured Products
+          </h2>
 
-          <div>
-
-            <h2 className="text-4xl font-bold">
-              Featured Products
-            </h2>
-
-            <p className="text-gray-500 mt-2">
-              Best selling products this week
-            </p>
-
-          </div>
-
-          <button className="text-blue-600 font-semibold">
+          <Link
+            to="/products"
+            className="text-blue-600 font-semibold hover:underline"
+          >
             View All →
-          </button>
-
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-
-          {products.map((product) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {featured.map((product) => (
             <ProductCard
               key={product.id}
-              {...product}
+              product={product}
             />
           ))}
-
         </div>
 
       </div>
-
     </section>
   );
 };

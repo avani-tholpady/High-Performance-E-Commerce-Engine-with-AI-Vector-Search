@@ -1,38 +1,20 @@
-export const products = [
+import { Product } from "../types/Product";
+
+export const products: Product[] = [
   {
     id: 1,
-    title: "Apple MacBook Pro",
-    image: "https://picsum.photos/400/400?random=1",
-    category: "Laptop",
-    price: 149999,
-    oldPrice: 169999,
-    rating: 5,
+    title: "iPhone 15",
+    description: "128GB Blue",
+    price: 69999,
+    image: "https://via.placeholder.com/300",
+    category: "Electronics"
   },
   {
     id: 2,
-    title: "iPhone 16 Pro",
-    image: "https://picsum.photos/400/400?random=2",
-    category: "Mobile",
-    price: 109999,
-    oldPrice: 119999,
-    rating: 5,
-  },
-  {
-    id: 3,
-    title: "Apple Watch Ultra",
-    image: "https://picsum.photos/400/400?random=3",
-    category: "Watch",
-    price: 24999,
-    oldPrice: 29999,
-    rating: 4,
-  },
-  {
-    id: 4,
-    title: "Sony WH-1000XM5",
-    image: "https://picsum.photos/400/400?random=4",
-    category: "Headphones",
-    price: 14999,
-    oldPrice: 18999,
-    rating: 5,
-  },
+    title: "Laptop",
+    description: "Gaming Laptop",
+    price: 85000,
+    image: "https://via.placeholder.com/300",
+    category: "Electronics"
+  }
 ];

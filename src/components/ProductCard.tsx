@@ -1,27 +1,31 @@
-interface ProductCardProps {
-  name: string;
-  category: string;
-  price: number;
-  image: string;
+import { Product } from "../../types/Product";
+import ProductCard from "../components/product/ProductCard";
+interface Props {
+  product: Product;
 }
 
-function ProductCard({ name, category, price, image }: ProductCardProps) {
+const ProductCard = ({ product }: Props) => {
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "8px",
-        padding: "16px",
-        width: "220px",
-        textAlign: "center",
-      }}
-    >
-      <img src={image} alt={name} width={150} height={150} />
-      <h3>{name}</h3>
-      <p>{category}</p>
-      <h4>₹{price}</h4>
+    <div className="bg-white p-5 rounded-xl shadow">
+
+      <img
+        src={product.image}
+        alt={product.title}
+        className="w-full h-48 object-cover"
+      />
+
+      <h2 className="text-xl font-bold mt-3">
+        {product.title}
+      </h2>
+
+      <p>{product.description}</p>
+
+      <p className="font-bold">
+        ₹{product.price}
+      </p>
+
     </div>
   );
-}
+};
 
 export default ProductCard;

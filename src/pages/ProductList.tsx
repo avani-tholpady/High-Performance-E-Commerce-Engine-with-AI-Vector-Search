@@ -10,24 +10,27 @@ import "./ProductList.css";
 const products = [
   {
     id: 1,
-    name: "Laptop",
+    title: "Laptop",
     category: "Electronics",
     price: 55000,
-    image: "https://via.placeholder.com/150",
+    image: "https://via.placeholder.com/300",
+    description: "High-performance laptop for work and gaming.",
   },
   {
     id: 2,
-    name: "Shoes",
+    title: "Shoes",
     category: "Fashion",
     price: 2500,
-    image: "https://via.placeholder.com/150",
+    image: "https://via.placeholder.com/300",
+    description: "Comfortable casual shoes.",
   },
   {
     id: 3,
-    name: "Headphones",
+    title: "Headphones",
     category: "Electronics",
     price: 3500,
-    image: "https://via.placeholder.com/150",
+    image: "https://via.placeholder.com/300",
+    description: "Wireless noise-cancelling headphones.",
   },
 ];
 
@@ -39,9 +42,24 @@ function ProductList() {
   const [loading] = useState(false);
   const [error] = useState("");
 
+  const filteredProducts = products
+    .filter((product) =>
+      product.title.toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((product) =>
+      category ? product.category === category : true
+    )
+    .sort((a, b) => {
+      if (sort === "low-high") return a.price - b.price;
+      if (sort === "high-low") return b.price - a.price;
+      return 0;
+    });
+
   return (
-    <div>
-      <h1>Product Catalog</h1>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        Product Catalog
+      </h1>
 
       <SearchBar search={search} setSearch={setSearch} />
 
@@ -58,31 +76,15 @@ function ProductList() {
       {loading ? (
         <Loader />
       ) : error ? (
-        <div
-          style={{
-            color: "red",
-            textAlign: "center",
-            marginTop: "20px",
-          }}
-        >
+        <div className="text-red-500 text-center mt-5">
           {error}
         </div>
       ) : (
-        <div
-          style={{
-            display: "flex",
-            gap: "20px",
-            flexWrap: "wrap",
-            marginTop: "20px",
-          }}
-        >
-          {products.map((product) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
-              name={product.name}
-              category={product.category}
-              price={product.price}
-              image={product.image}
+              product={product}
             />
           ))}
         </div>
