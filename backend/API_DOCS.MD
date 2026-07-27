@@ -21,6 +21,16 @@
 | GET | `/orders` | Retrieve authenticated user's orders (Protected) |
 | POST | `/auth/register` | Register a new user |
 | POST | `/auth/login` | Login user and retrieve JWT token |
+| POST | `/variants` | Create a new product variant (Protected) |
+| PUT | `/variants/:id` | Update an existing product variant (Protected) |
+| DELETE | `/variants/:id` | Soft delete/deactivate a variant (Protected) |
+| GET | `/variants/:id` | Retrieve single variant by ID |
+| GET | `/variants/product/:productId` | Retrieve all active variants for a product |
+| GET | `/variants` | Retrieve all active variants |
+| GET | `/variants/search` | Search product variants by attributes |
+| POST | `/variants/:id/stock/increase` | Increase stock quantity for variant (Protected) |
+| POST | `/variants/:id/stock/decrease` | Decrease stock quantity for variant (Protected) |
+| GET | `/analytics/search` | Retrieve aggregate product search statistics (Protected) |
 
 ---
 ## GET /api/products/:id/recommend
@@ -727,6 +737,196 @@ Logs in an existing user and returns a JWT token.
 | 401 | UNAUTHORIZED | Invalid email or password |
 
 ---
+
+# 📦 Product Variant API Documentation (Protected Mutations)
+
+All mutation operations require authentication using a valid Bearer JWT.
+
+## POST /api/variants
+
+Creates a new variant for an existing active product.
+
+### Request Body
+
+```json
+{
+  "productId": "64b0f9f3c1b0c03d1c9ef001",
+  "sku": "VAR-SHIRT-BLUE-M",
+  "size": "M",
+  "color": "Blue",
+  "material": "100% Cotton",
+  "images": ["https://example.com/shirt-blue.jpg"],
+  "stockQuantity": 15,
+  "lowStockThreshold": 3,
+  "price": 29.99,
+  "salePrice": 24.99,
+  "barcode": "1234567890",
+  "weight": 0.25,
+  "dimensions": {
+    "length": 30,
+    "width": 20,
+    "height": 2
+  }
+}
+```
+
+### Success Response (201)
+
+```json
+{
+  "success": true,
+  "message": "Variant created successfully",
+  "data": {
+    "_id": "669999999999999999999999",
+    "productId": "64b0f9f3c1b0c03d1c9ef001",
+    "sku": "VAR-SHIRT-BLUE-M",
+    "size": "M",
+    "color": "Blue",
+    "material": "100% Cotton",
+    "images": ["https://example.com/shirt-blue.jpg"],
+    "stockQuantity": 15,
+    "lowStockThreshold": 3,
+    "price": 29.99,
+    "salePrice": 24.99,
+    "barcode": "1234567890",
+    "weight": 0.25,
+    "dimensions": {
+      "length": 30,
+      "width": 20,
+      "height": 2
+    },
+    "isActive": true,
+    "inventoryAlerts": {
+      "isLowStock": false,
+      "isOutOfStock": false,
+      "alertMessage": "Stock level is healthy."
+    }
+  }
+}
+```
+
+---
+
+## POST /api/variants/:id/stock/increase
+
+Increases the stock quantity of a variant.
+
+### Request Body
+
+```json
+{
+  "quantity": 10
+}
+```
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "message": "Stock increased successfully",
+  "data": {
+    "sku": "VAR-SHIRT-BLUE-M",
+    "stockQuantity": 25,
+    "inventoryAlerts": {
+      "isLowStock": false,
+      "isOutOfStock": false,
+      "alertMessage": "Stock level is healthy."
+    }
+  }
+}
+```
+
+---
+
+## POST /api/variants/:id/stock/decrease
+
+Decreases the stock quantity of a variant. Prevents negative stock counts.
+
+### Request Body
+
+```json
+{
+  "quantity": 5
+}
+```
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "message": "Stock decreased successfully",
+  "data": {
+    "sku": "VAR-SHIRT-BLUE-M",
+    "stockQuantity": 20,
+    "inventoryAlerts": {
+      "isLowStock": false,
+      "isOutOfStock": false,
+      "alertMessage": "Stock level is healthy."
+    }
+  }
+}
+```
+
+---
+
+# 📊 Search Analytics API Documentation (Protected)
+
+## GET /api/analytics/search
+
+Returns aggregate statistics on search keywords entered by users.
+
+### Success Response (200)
+
+```json
+{
+  "success": true,
+  "message": "Search analytics statistics retrieved successfully",
+  "data": [
+    {
+      "_id": "samsung",
+      "keyword": "samsung",
+      "searchCount": 28,
+      "avgResponseTimeMs": 42.15,
+      "avgResultCount": 5,
+      "lastSearchedAt": "2026-07-27T18:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+# ⚡ Redis Caching & Performance Benchmark
+
+Product List and Product Retrieve endpoints are cached via Redis layer. To run performance benchmarking, pass the query parameter `?benchmark=true` or send the custom header `X-Benchmark: true` with any search request.
+
+Example: `GET /api/products/ai-search?query=wireless headphones&benchmark=true`
+
+### Benchmarking Payload Example
+
+```json
+{
+  "success": true,
+  "results": [...],
+  "benchmark": {
+    "apiResponseTimeMs": 142.50,
+    "redisCache": "bypass",
+    "mongoQueryTimeMs": 12.80,
+    "embeddingGenerationTimeMs": 115.30
+  }
+}
+```
+
+---
+
+# 🛡️ Rate Limiting & Compression
+
+* **Global Compression**: Enabled globally via `compression()` middleware to optimize bandwidth.
+* **Global Rate Limiting**: Limit of 100 requests per 15 minutes applies across all `/api` endpoints.
+* **Authentication Protection**: Brute-force protection limiting users to a maximum of 20 authentication requests (register/login) per 15 minutes on `/api/auth` endpoints.
+
 
 
 ---

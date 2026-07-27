@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const embedText = require("../utils/embedding");
+const { getCache, setCache, deleteCache } = require("../config/redis");
 const {
   ValidationError,
   DuplicateError,
@@ -8,6 +9,24 @@ const {
   InvalidIdError
 } = require("../utils/errors");
 const { successResponse } = require("../utils/apiResponse");
+const SearchAnalytics = require("../models/SearchAnalytics");
+const { startBenchmark, getDurationMs } = require("../utils/benchmark");
+
+/**
+ * Asynchronously logs search query statistics.
+ */
+const logSearchAnalytics = async (keyword, responseTime, resultCount) => {
+  try {
+    const log = new SearchAnalytics({
+      keyword,
+      responseTime,
+      resultCount
+    });
+    await log.save();
+  } catch (err) {
+    console.error("Failed to save search analytics:", err.message);
+  }
+};
 
 /**
  * Validates request payload for creation or update.
@@ -297,6 +316,9 @@ const createProduct = async (req, res, next) => {
     await updateProductEmbedding(product);
     await product.save();
 
+    // Invalidate list caches
+    await deleteCache("products:list:*");
+
     return res.status(201).json({
       success: true,
       data: product
@@ -308,7 +330,39 @@ const createProduct = async (req, res, next) => {
 
 // GET /api/products
 const getProducts = async (req, res, next) => {
+  const overallStart = startBenchmark();
+  let redisStatus = "miss";
+  let mongoTime = 0;
   try {
+    // Generate sorted cache key based on query parameters
+    const queryString = Object.keys(req.query)
+      .sort()
+      .map(key => `${key}=${req.query[key]}`)
+      .join("&");
+    const cacheKey = `products:list:${queryString || "all"}`;
+
+    // Try to retrieve from cache
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      redisStatus = "hit";
+      const overallTime = getDurationMs(overallStart);
+
+      // Log search analytics if a search term is specified
+      if (req.query.search) {
+        logSearchAnalytics(req.query.search, overallTime, cachedData.data ? cachedData.data.length : 0);
+      }
+
+      if (req.query.benchmark === "true" || req.headers["x-benchmark"] === "true") {
+        cachedData.benchmark = {
+          apiResponseTimeMs: overallTime,
+          redisCache: "hit",
+          mongoQueryTimeMs: 0,
+          embeddingGenerationTimeMs: 0
+        };
+      }
+      return res.status(200).json(cachedData);
+    }
+
     const filter = { isActive: true };
     const { page, limit, search, category, minPrice, maxPrice, sort } = req.query;
 
@@ -372,11 +426,13 @@ const getProducts = async (req, res, next) => {
       query = query.select({ score: { $meta: "textScore" } });
     }
 
+    const mongoStart = startBenchmark();
     const totalDocs = await Product.countDocuments(filter);
     const products = await query
       .sort(sortOption)
       .skip(skipNum)
       .limit(limitNum);
+    mongoTime = getDurationMs(mongoStart);
 
     const totalPages = Math.ceil(totalDocs / limitNum);
     const hasNextPage = pageNum < totalPages;
@@ -384,7 +440,7 @@ const getProducts = async (req, res, next) => {
     const nextPage = hasNextPage ? pageNum + 1 : null;
     const prevPage = hasPrevPage ? pageNum - 1 : null;
 
-    return res.status(200).json({
+    const responsePayload = {
       success: true,
       data: products,
       meta: {
@@ -397,7 +453,27 @@ const getProducts = async (req, res, next) => {
         nextPage,
         prevPage
       }
-    });
+    };
+
+    // Store in cache
+    await setCache(cacheKey, responsePayload);
+
+    const overallTime = getDurationMs(overallStart);
+
+    if (search) {
+      logSearchAnalytics(search, overallTime, products.length);
+    }
+
+    if (req.query.benchmark === "true" || req.headers["x-benchmark"] === "true") {
+      responsePayload.benchmark = {
+        apiResponseTimeMs: overallTime,
+        redisCache: "miss",
+        mongoQueryTimeMs: mongoTime,
+        embeddingGenerationTimeMs: 0
+      };
+    }
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     next(error);
   }
@@ -405,22 +481,62 @@ const getProducts = async (req, res, next) => {
 
 // GET /api/products/:id
 const getProductById = async (req, res, next) => {
+  const overallStart = startBenchmark();
+  let redisStatus = "miss";
+  let mongoTime = 0;
   try {
     // 1. Invalid ObjectId check
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       throw new InvalidIdError();
     }
 
+    const cacheKey = `products:id:${req.params.id}`;
+
+    // Try to retrieve from cache
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      redisStatus = "hit";
+      const overallTime = getDurationMs(overallStart);
+      if (req.query.benchmark === "true" || req.headers["x-benchmark"] === "true") {
+        cachedData.benchmark = {
+          apiResponseTimeMs: overallTime,
+          redisCache: "hit",
+          mongoQueryTimeMs: 0,
+          embeddingGenerationTimeMs: 0
+        };
+      }
+      return res.status(200).json(cachedData);
+    }
+
     // 2. Nonexistent / Soft-deleted check
+    const mongoStart = startBenchmark();
     const product = await Product.findOne({ _id: req.params.id, isActive: true });
+    mongoTime = getDurationMs(mongoStart);
+
     if (!product) {
       throw new NotFoundError(`Product with ID '${req.params.id}' was not found or is currently inactive.`);
     }
 
-    return res.status(200).json({
+    const responsePayload = {
       success: true,
       data: product
-    });
+    };
+
+    // Store in cache
+    await setCache(cacheKey, responsePayload);
+
+    const overallTime = getDurationMs(overallStart);
+
+    if (req.query.benchmark === "true" || req.headers["x-benchmark"] === "true") {
+      responsePayload.benchmark = {
+        apiResponseTimeMs: overallTime,
+        redisCache: "miss",
+        mongoQueryTimeMs: mongoTime,
+        embeddingGenerationTimeMs: 0
+      };
+    }
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     next(error);
   }
@@ -539,6 +655,10 @@ const updateProduct = async (req, res, next) => {
 
     await product.save();
 
+    // Invalidate caches
+    await deleteCache(`products:id:${product._id}`);
+    await deleteCache("products:list:*");
+
     return res.status(200).json({
       success: true,
       data: product
@@ -549,7 +669,8 @@ const updateProduct = async (req, res, next) => {
 };
 
 
-const aiSearch = async (req, res) => {
+const aiSearch = async (req, res, next) => {
+  const overallStart = startBenchmark();
   try {
     const { query } = req.query;
 
@@ -560,8 +681,11 @@ const aiSearch = async (req, res) => {
       });
     }
 
+    const embedStart = startBenchmark();
     const queryEmbedding = await embedText(query);
+    const embeddingTime = getDurationMs(embedStart);
 
+    const mongoStart = startBenchmark();
     const products = await Product.aggregate([
       {
         $vectorSearch: {
@@ -573,18 +697,30 @@ const aiSearch = async (req, res) => {
         },
       },
     ]);
+    const mongoTime = getDurationMs(mongoStart);
 
-    res.json({
+    const overallTime = getDurationMs(overallStart);
+
+    // Log search analytics asynchronously
+    logSearchAnalytics(query, overallTime, products.length);
+
+    const responsePayload = {
       success: true,
-      results: products,
-    });
-  } catch (err) {
-    console.error(err);
+      results: products
+    };
 
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    if (req.query.benchmark === "true" || req.headers["x-benchmark"] === "true") {
+      responsePayload.benchmark = {
+        apiResponseTimeMs: overallTime,
+        redisCache: "bypass",
+        mongoQueryTimeMs: mongoTime,
+        embeddingGenerationTimeMs: embeddingTime
+      };
+    }
+
+    return res.status(200).json(responsePayload);
+  } catch (err) {
+    next(err);
   }
 };
 // DELETE /api/products/:id
@@ -604,6 +740,10 @@ const deleteProduct = async (req, res, next) => {
     // 3. Perform Soft Delete
     product.isActive = false;
     await product.save();
+
+    // Invalidate caches
+    await deleteCache(`products:id:${product._id}`);
+    await deleteCache("products:list:*");
 
     return res.status(200).json({
       success: true,
