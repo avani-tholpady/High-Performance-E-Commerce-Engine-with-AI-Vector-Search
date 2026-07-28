@@ -1,0 +1,610 @@
+{
+  "info": {
+    "_postman_id": "c7c82371-41f6-4185-a56a-b768a8eba60e",
+    "name": "Product-API",
+    "description": "Postman Collection for verifying High-Performance Product CRUD REST APIs with full-text search, pagination, and data validation rules.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Create Product (POST)",
+      "item": [
+        {
+          "name": "Create Product - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const randomNum = Math.floor(Math.random() * 1000000);",
+                  "pm.environment.set(\"dynamicSku\", \"TST-SKU-\" + randomNum);",
+                  "pm.environment.set(\"dynamicSlug\", \"sony-wh-1000xm5-wireless-headphones-\" + randomNum);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Response is successful and returns data\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data).to.have.property(\"_id\");",
+                  "});",
+                  "if (response.success && response.data) {",
+                  "    pm.environment.set(\"testProductId\", response.data._id);",
+                  "    pm.environment.set(\"testProductSku\", response.data.sku);",
+                  "    pm.environment.set(\"testProductSlug\", response.data.slug);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sony WH-1000XM5 Wireless Headphones\",\n  \"slug\": \"{{dynamicSlug}}\",\n  \"sku\": \"{{dynamicSku}}\",\n  \"description\": \"Industry-leading noise canceling headphones with dual processors and 8 microphones.\",\n  \"price\": 398.00,\n  \"compareAtPrice\": 449.99,\n  \"category\": \"electronics/audio\",\n  \"brand\": \"Sony\",\n  \"images\": [\n    \"https://assets.ecommerce.com/products/sony-wh1000xm5/main.jpg\",\n    \"https://assets.ecommerce.com/products/sony-wh1000xm5/side.jpg\"\n  ],\n  \"stock\": 120,\n  \"tags\": [\"headphones\", \"anc\", \"wireless\", \"audio\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Create Product - Missing Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Error code is VALIDATION_FAILED\", function () {",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.error.code).to.equal(\"VALIDATION_FAILED\");",
+                  "    pm.expect(response.error.details).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Missing name, sku, category, brand etc.\",\n  \"price\": 100,\n  \"stock\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Create Product - Invalid Price/Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Reports field validation errors\", function () {",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.error.details.some(d => d.field === 'price')).to.be.true;",
+                  "    pm.expect(response.error.details.some(d => d.field === 'stock')).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid Bounds Product\",\n  \"slug\": \"invalid-bounds-product\",\n  \"sku\": \"INV-BND-01\",\n  \"description\": \"Product with negative price and negative stock values.\",\n  \"price\": -50.00,\n  \"category\": \"electronics/audio\",\n  \"brand\": \"InvalidBrand\",\n  \"images\": [\"https://example.com/img.jpg\"],\n  \"stock\": -10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Create Product - Duplicate SKU",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Error code is RESOURCE_ALREADY_EXISTS\", function () {",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.error.code).to.equal(\"RESOURCE_ALREADY_EXISTS\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sony WH-1000XM5 wireless duplicated\",\n  \"slug\": \"sony-wh-1000xm5-duplicated-slug\",\n  \"sku\": \"{{testProductSku}}\",\n  \"description\": \"Uses the duplicate SKU generated during success create request.\",\n  \"price\": 398.00,\n  \"category\": \"electronics/audio\",\n  \"brand\": \"Sony\",\n  \"images\": [\"https://assets.ecommerce.com/products/sony-wh1000xm5/main.jpg\"],\n  \"stock\": 120\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Read Products List (GET)",
+      "item": [
+        {
+          "name": "Get Products - Default Pagination",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Returns success envelope and pagination metadata\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "    pm.expect(response.meta).to.have.property(\"totalDocs\");",
+                  "    pm.expect(response.meta.limit).to.equal(10);",
+                  "    pm.expect(response.meta.page).to.equal(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products - Search Filter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Filters by search term\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?search=Sony",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Sony"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products - Category & Price Range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Filters by pricing range and category path\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    response.data.forEach(item => {",
+                  "         pm.expect(item.category).to.equal(\"electronics/audio\");",
+                  "         pm.expect(item.price).to.be.at.least(100);",
+                  "         pm.expect(item.price).to.be.at.most(500);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?category=electronics/audio&minPrice=100&maxPrice=500&sort=price:asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "electronics/audio"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "100"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "500"
+                },
+                {
+                  "key": "sort",
+                  "value": "price:asc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products - Out of Bounds Pagination",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Returns empty list and out of bound page metadata\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data.length).to.equal(0);",
+                  "    pm.expect(response.meta.page).to.equal(99999);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?page=99999&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "99999"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Read Single Product (GET)",
+      "item": [
+        {
+          "name": "Get Product by ID - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Returns exact matching product document details\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data._id).to.equal(pm.environment.get(\"testProductId\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{testProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{testProductId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID - Invalid ObjectId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Error code is INVALID_ID_FORMAT\", function () {",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.error.code).to.equal(\"INVALID_ID_FORMAT\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/invalid-id-format-string-12345",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "invalid-id-format-string-12345"]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID - Nonexistent ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Error code is RESOURCE_NOT_FOUND\", function () {",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.error.code).to.equal(\"RESOURCE_NOT_FOUND\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/64b0f9f3c1b0c03d1c9ef999",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "64b0f9f3c1b0c03d1c9ef999"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Update Product (PUT)",
+      "item": [
+        {
+          "name": "Update Product - Partial Price Change",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Product fields updated correctly\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data.price).to.equal(389.00);",
+                  "    pm.expect(response.data.stock).to.equal(110);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 389.00,\n  \"stock\": 110\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/{{testProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{testProductId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Product - SKU Collision",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Error code is RESOURCE_ALREADY_EXISTS\", function () {",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.error.code).to.equal(\"RESOURCE_ALREADY_EXISTS\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"ELE-AUD-000001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/{{testProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{testProductId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Delete Product (DELETE)",
+      "item": [
+        {
+          "name": "Delete Product - Soft Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Soft delete success message verified\", function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data.message).to.contain(\"successfully deactivated\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{testProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{testProductId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product - Re-verify Deletion 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Accessing deactivated product returns 404\", function () {",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.error.code).to.equal(\"RESOURCE_NOT_FOUND\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{testProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{testProductId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
