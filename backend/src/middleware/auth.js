@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const User = require("../models/User");
-const { UnauthorizedError } = require("../utils/errors");
+const { UnauthorizedError, ForbiddenError } = require("../utils/errors");
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret_key_123456";
 
@@ -70,4 +70,18 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+/**
+ * Role authorization middleware.
+ */
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    // If testing and using mock token, default req.user.role is not populated. We fetch or mock it.
+    const userRole = req.user && req.user.role ? req.user.role : "user";
+    if (!req.user || !roles.includes(userRole)) {
+      throw new ForbiddenError("Access denied. You do not have permission to access this resource.");
+    }
+    next();
+  };
+};
+
+module.exports = { protect, authorize };

@@ -39,11 +39,18 @@ class UnauthorizedError extends AppError {
   }
 }
 
+class ForbiddenError extends AppError {
+  constructor(message = "Access denied. You do not have permission to access this resource.") {
+    super(message, 403, "FORBIDDEN");
+  }
+}
+
 module.exports = {
   AppError,
   NotFoundError,
   ValidationError,
   DuplicateError,
   InvalidIdError,
-  UnauthorizedError
+  UnauthorizedError,
+  ForbiddenError
 };
