@@ -421,7 +421,7 @@ const getProducts = async (req, res, next) => {
       }
     }
 
-    let query = Product.find(filter);
+    let query = Product.find(filter).select("-embedding");
     if (filter.$text && sortOption.score) {
       query = query.select({ score: { $meta: "textScore" } });
     }
@@ -510,7 +510,10 @@ const getProductById = async (req, res, next) => {
 
     // 2. Nonexistent / Soft-deleted check
     const mongoStart = startBenchmark();
-    const product = await Product.findOne({ _id: req.params.id, isActive: true });
+    const product = await Product.findOne({
+  _id: req.params.id,
+  isActive: true
+}).select("-embedding");
     mongoTime = getDurationMs(mongoStart);
 
     if (!product) {
@@ -564,7 +567,9 @@ const getRelatedProducts = async (req, res, next) => {
         { category: product.category },
         { tags: { $in: product.tags || [] } }
       ]
-    }).limit(8);
+    })
+.select("-embedding")
+.limit(8);
 
     return successResponse(
       res,
@@ -805,9 +810,11 @@ const getPriceRange = async (req, res, next) => {
 const getFeaturedProducts = async (req, res, next) => {
   try {
     const featured = await Product.find({
-      isActive: true,
-      tags: "featured",
-    }).limit(5);
+  isActive: true,
+  tags: "featured",
+})
+.select("-embedding")
+.limit(5);
 
     return res.status(200).json({
       success: true,
@@ -822,9 +829,11 @@ const getFeaturedProducts = async (req, res, next) => {
 const getOnSaleProducts = async (req, res, next) => {
   try {
     const onSale = await Product.find({
-      isActive: true,
-      compareAtPrice: { $gt: 0 },
-    }).limit(5);
+  isActive: true,
+  compareAtPrice: { $gt: 0 },
+})
+.select("-embedding")
+.limit(5);
 
     return res.status(200).json({
       success: true,
