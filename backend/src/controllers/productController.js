@@ -202,7 +202,58 @@ const validateProductPayload = (body, isUpdate = false) => {
 
   return details;
 };
+// GET /api/products/:id/recommend
+const getRecommendedProducts = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      throw new InvalidIdError();
+    }
 
+    const product = await Product.findOne({
+      _id: req.params.id,
+      isActive: true,
+    });
+
+    if (!product) {
+      throw new NotFoundError("Product not found.");
+    }
+
+    if (!product.embedding || product.embedding.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product does not have an embedding.",
+      });
+    }
+
+    const recommendations = await Product.aggregate([
+      {
+        $vectorSearch: {
+          index: "product_vector_index",
+          path: "embedding",
+          queryVector: product.embedding,
+          numCandidates: 100,
+          limit: 9,
+        },
+      },
+      {
+        $match: {
+          _id: { $ne: product._id },
+          isActive: true,
+        },
+      },
+      {
+        $limit: 8,
+      },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: recommendations,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 /**
  * Automatically generates embedding for the product if HF_TOKEN is present
  * and one of the text fields changed.
@@ -673,11 +724,13 @@ const getProductStats = async (req, res, next) => {
     next(error);
   }
 };
+
 module.exports = {
   createProduct,
   getProducts,
   getProductById,
   getRelatedProducts,
+  getRecommendedProducts,
   updateProduct,
   deleteProduct,
   getCategories,

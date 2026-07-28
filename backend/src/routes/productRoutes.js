@@ -11,6 +11,7 @@ const {
   getBrands,
   getPriceRange,
   getRelatedProducts,
+  getRecommendedProducts,
   aiSearch,
   getFeaturedProducts,
   getOnSaleProducts,
@@ -58,7 +59,7 @@ router.get("/on-sale", getOnSaleProducts);
 router.get("/stats", getProductStats);
 router.get("/:id", getProductById);
 router.get("/:id/related", getRelatedProducts);
-
+router.get("/:id/recommend", getRecommendedProducts);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
 
