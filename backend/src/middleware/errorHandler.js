@@ -8,9 +8,7 @@ const errorHandler = (err, req, res, next) => {
   error.details = err.details || null;
 
   // Log error for developers in development/test
-  if (process.env.NODE_ENV !== "test") {
-    console.error(err);
-  }
+  console.error("💥 ERROR CAUGHT BY MIDDLEWARE:", err.stack || err);
 
   // Handle Mongoose / MongoDB errors if they weren't caught in controller
   // 1. Mongoose Bad ObjectId (CastError)
